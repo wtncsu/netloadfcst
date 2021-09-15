@@ -1,0 +1,5 @@
+DC System Size 2015 (kW):	1481
+DC System Size 2016 (kW):	1693
+DC System Size 2017 (kW):	1905
+DC System Size 2018 (kW):	2117
+DC System Size 2019 (kW):	2328
