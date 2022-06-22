@@ -1,0 +1,5 @@
+DC System Size 2015 (MW):	322
+DC System Size 2016 (MW):	368
+DC System Size 2017 (MW):	414
+DC System Size 2018 (MW):	461
+DC System Size 2019 (MW):	507

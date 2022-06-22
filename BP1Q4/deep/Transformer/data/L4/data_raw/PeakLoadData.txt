@@ -1,0 +1,9 @@
+Area, PeakLoad(MW)
+Capital, 2305
+Central, 2814
+Dunwoody, 1398
+Genese, 1953
+HudsonValley, 2203
+LongIsland, 5235
+Millwood, 613
+NYC, 10585
