@@ -1,0 +1,4 @@
+[Clustering]
+n_clusters_min=2
+n_clusters_max=6
+
