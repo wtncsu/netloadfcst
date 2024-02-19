@@ -1,4 +1,4 @@
-utc,month,hour,dayofweek,netload,tmpc,mw2day,mw7day
+date,month,hour,dayofweek,netload,tmpc,mw2day,mw7day
 2017-01-01 00:00:00,1,0,6,9772,-3.383,9539.0,8138.0
 2017-01-01 01:00:00,1,1,6,9354,-3.764,9158.0,7597.0
 2017-01-01 02:00:00,1,2,6,8980,-4.12,8958.0,7291.0

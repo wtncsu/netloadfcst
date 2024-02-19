@@ -1,4 +1,4 @@
-utc,month,hour,dayofweek,tmpc,mw2day,mw7day
+date,month,hour,dayofweek,tmpc,mw2day,mw7day
 2017-01-01 00:00:00,1,0,6,1.834,5091.0,5024.0
 2017-01-01 01:00:00,1,1,6,1.857,4850.0,4841.0
 2017-01-01 02:00:00,1,2,6,1.79,4769.0,4663.0

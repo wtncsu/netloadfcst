@@ -1,4 +1,4 @@
-utc,month,hour,dayofweek,netload,tmpc,mw2day,mw7day
+date,month,hour,dayofweek,netload,tmpc,mw2day,mw7day
 2019-01-01 00:00:00,1,0,1,11194,7.272,10633.0,10657.0
 2019-01-01 01:00:00,1,1,1,10933,7.341,10287.0,10258.0
 2019-01-01 02:00:00,1,2,1,10667,7.408,10156.0,10073.0

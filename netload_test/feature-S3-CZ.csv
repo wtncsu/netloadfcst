@@ -1,4 +1,4 @@
-utc,month,hour,dayofweek,tmpc,mw2day,mw7day,potential
+date,month,hour,dayofweek,tmpc,mw2day,mw7day,potential
 2019-01-01 00:00:00,1,0,1,0.371,5691.54,5365.37,0.0
 2019-01-01 01:00:00,1,1,1,0.503,5794.43,5416.48,0.0
 2019-01-01 02:00:00,1,2,1,0.692,5729.58,5352.65,0.0

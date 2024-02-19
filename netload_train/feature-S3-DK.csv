@@ -1,4 +1,4 @@
-utc,month,hour,dayofweek,tmpc,mw2day,mw7day,potential
+date,month,hour,dayofweek,tmpc,mw2day,mw7day,potential
 2017-01-01 00:00:00,1,0,6,6.529,2716.49,3041.77,0.0
 2017-01-01 01:00:00,1,1,6,6.564,2638.85,2863.15,0.0
 2017-01-01 02:00:00,1,2,6,6.531,2616.79,2828.01,0.0
