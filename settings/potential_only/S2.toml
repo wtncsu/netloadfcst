@@ -1,0 +1,6 @@
+[model]
+max_n_splits=10
+min_partition_size=1
+min_impurity_drop=0.0
+batch_size=128
+n_epochs=10
