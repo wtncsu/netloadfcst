@@ -16,9 +16,9 @@ parser.add_argument('--target', type=Path)
 parser.add_argument('--save', type=Path)
 args = parser.parse_args()
 
-mean = read_csv(args.mean, index_col=0)
-std = read_csv(args.std, index_col=0)
-target = (read_csv(args.target, index_col=0)
+mean = read_csv(args.mean, index_col=0, parse_dates=[0])
+std = read_csv(args.std, index_col=0, parse_dates=[0])
+target = (read_csv(args.target, index_col=0, parse_dates=[0])
           if args.target is not None else None)
 
 datetime = date2num(mean.index)
