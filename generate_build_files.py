@@ -24,7 +24,6 @@ def generate(category):
         visualize_tree = f'output/{category}/tree-{file.stem}.svg'
         train_time = f'output/{category}/train-time-{file.stem}'
         test_time = f'output/{category}/test-time-{file.stem}'
-        plot = f'output/{category}/test-{file.stem}.png'
 
         build_command_name = f'{category}-{file.stem}'
         build_command = (
@@ -65,10 +64,9 @@ def generate(category):
         writer.build(
             rule=plot_command_name,
             inputs=[test_target, predict_mean, predict_std, config],
-            outputs=[plot]
+            outputs=[f'plot-{category}-{file.stem}']
         )
 
-        writer.default(plot)
         writer.newline()
 
 
