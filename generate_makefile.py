@@ -110,6 +110,8 @@ def plot_prediction(details):
         )
     )
 
+    makefile.new_rule('all', depends=[details.plot])
+
 
 def show_prediction(details):
     show_target = f'show-{details.category}-{details.dataset}'
