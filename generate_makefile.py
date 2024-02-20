@@ -93,8 +93,6 @@ def run_model(details):
 
 
 def plot_prediction(details):
-    plot_target = f'plot-{details.category}-{details.dataset}'
-
     depends = [
         f'{details.predict_mean}', f'{details.predict_std}',
         f'{details.test_target}'

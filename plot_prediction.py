@@ -94,11 +94,8 @@ for col in mean.columns:
     plt.subplots_adjust(left=0.07, right=0.98, top=0.8, bottom=0.19)
 
     if args.save is not None:
-        filename = (
-            f'{args.save.parent}/{args.save.stem}-{col}{args.save.suffix}'
-        )
-
-        plt.savefig(filename, dpi=300)
+        args.save.mkdir(exist_ok=True, parents=True)
+        plt.savefig(f'{args.save}/{col}.png', dpi=300)
 
 if args.save is None:
     plt.show()
