@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from builtins import set
 from glob import glob
 from pathlib import Path
 
@@ -47,7 +46,6 @@ def generate(category):
             f'--mean={predict_mean} '
             f'--std={predict_std} '
             f'--target={test_target} '
-            f'--save=$out '
         )
 
         writer.rule(name=build_command_name, command=build_command)
