@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from builtins import set
 from glob import glob
 from pathlib import Path
 
@@ -59,14 +59,14 @@ def generate(category):
         writer.build(
             rule=build_command_name,
             outputs=[predict_mean, predict_std, visualize_tree],
-            inputs=[train_feature, train_target, test_feature]
+            inputs=[train_feature, train_target, test_feature, config]
         )
         writer.default([predict_mean, predict_std, visualize_tree])
         writer.newline()
 
         writer.build(
             rule=plot_command_name,
-            inputs=[test_target, predict_mean, predict_std],
+            inputs=[test_target, predict_mean, predict_std, config],
             outputs=[plot]
         )
 
