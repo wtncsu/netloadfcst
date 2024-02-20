@@ -13,6 +13,7 @@ parser = ArgumentParser()
 parser.add_argument('--mean', type=Path, required=True)
 parser.add_argument('--std', type=Path, required=True)
 parser.add_argument('--target', type=Path)
+parser.add_argument('--save', type=Path)
 args = parser.parse_args()
 
 mean = read_csv(args.mean, index_col=0)
@@ -47,7 +48,8 @@ def plot_heatmap(dist, target=None, q_low=1e-3, q_high=1 - 1e-3,
     plt.colorbar(label='Prob. density')
 
     if target is not None:
-        plt.scatter(datetime, target, s=1, label='Observations', alpha=0.4)
+        plt.scatter(datetime, target, color='white', s=1, label='Observations',
+                    alpha=0.7)
         plt.legend()
 
 
@@ -67,6 +69,11 @@ def plot_interval(dist, target=None, q_low=0.05, q_high=0.95):
 
 
 for col in mean.columns:
+    if target is not None:
+        target_col = target[col]
+    else:
+        target_col = None
+
     title = (
         f'Pred mean={args.mean}\nstd={args.std}\n'
         f'Target={args.target}:{col}'
@@ -77,13 +84,21 @@ for col in mean.columns:
     plt.figure(figsize=(12, 4))
 
     ax1 = plt.subplot(121)
-    plot_heatmap(dist, target=target[col])
+    plot_heatmap(dist, target=target_col)
     annotate_plot(title)
 
     plt.subplot(122, sharex=ax1, sharey=ax1)
-    plot_interval(dist, target=target[col])
+    plot_interval(dist, target=target_col)
     annotate_plot(title)
 
     plt.subplots_adjust(left=0.07, right=0.98, top=0.8, bottom=0.19)
 
-plt.show()
+    if args.save is not None:
+        filename = (
+            f'{args.save.parent}/{args.save.stem}-{col}{args.save.suffix}'
+        )
+
+        plt.savefig(filename, dpi=300)
+
+if args.save is None:
+    plt.show()

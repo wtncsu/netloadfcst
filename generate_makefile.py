@@ -52,6 +52,7 @@ def create_details(category, setting_file):
     details.test_time = f'output/{category}/test-time-{dataset}'
 
     details.visualize_tree = f'output/{category}/tree-{dataset}.svg'
+    details.plot = f'output/{category}/{dataset}.png'
 
     details.dataset = dataset
     details.category = category
@@ -92,6 +93,25 @@ def run_model(details):
 
 
 def plot_prediction(details):
+    plot_target = f'plot-{details.category}-{details.dataset}'
+
+    depends = [
+        f'{details.predict_mean}', f'{details.predict_std}',
+        f'{details.test_target}'
+    ]
+
+    makefile.new_rule(
+        details.plot, depends=depends, command=(
+            './plot_prediction.py '
+            f'--mean={details.predict_mean} '
+            f'--std={details.predict_std} '
+            f'--target={details.test_target} '
+            f'--save={details.plot} '
+        )
+    )
+
+
+def show_prediction(details):
     show_target = f'show-{details.category}-{details.dataset}'
 
     depends = [
@@ -125,5 +145,6 @@ for category in categories:
         details = create_details(category, setting_file)
         run_model(details)
         plot_prediction(details)
+        show_prediction(details)
 
 makefile.close()
