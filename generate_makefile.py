@@ -5,8 +5,10 @@ from types import SimpleNamespace
 
 
 class Makefile:
-    def __init__(self, filename='Makefile'):
+    def __init__(self, filename='Makefile', default='all'):
         self._file = open(filename, 'w')
+        self.print(f'.DEFAULT_GOAL:={default}')
+        self.new_rule(default, depends=[])
 
     def close(self):
         self._file.close()

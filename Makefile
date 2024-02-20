@@ -1,3 +1,6 @@
+.DEFAULT_GOAL:=all
+all : 
+
 .PHONY: run-netload-S3-BG
 run-netload-S3-BG : output/netload/mean-S3-BG.csv output/netload/std-S3-BG.csv output/netload/train-time-S3-BG output/netload/test-time-S3-BG output/netload/tree-S3-BG.svg
 
