@@ -49,7 +49,7 @@ def plot_all():
         plt.title(f'predict={args.predict}:{column}')
 
         if args.save is not None:
-            plt.savefig(f'{args.save}/{column}.png', dpi=300)
+            plt.savefig(args.save, dpi=300)
 
     if args.save is None:
         plt.show()
