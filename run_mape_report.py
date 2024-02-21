@@ -33,6 +33,8 @@ def read_csv(filename):
 all_mape = list()
 
 for predict_filename, target_filename in zip(args.predict, args.target):
+    print(predict_filename, target_filename)
+
     predict = read_csv(predict_filename).to_numpy()
     target = read_csv(target_filename).to_numpy()
 
