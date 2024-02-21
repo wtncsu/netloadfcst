@@ -203,6 +203,62 @@ def run_time_report_by_folder(details, writer):
         writer.add_rule(phony1, depends=save_time_report, phony=True)
 
 
+def run_mape_report(details, writer):
+    save_mape_report = 'output/mape_report.csv'
+
+    predict_files = [detail.predict for detail in details]
+    target_files = [detail.test_target for detail in details]
+
+    files = predict_files + target_files
+    str_files = ' '.join(files)
+
+    command = list()
+    command.append(f'./run_mape_report.py --save {save_mape_report}')
+
+    for predict_file, target_file in zip(predict_files, target_files):
+        command.append(f'--predict {predict_file} --target {target_file}')
+
+    command = ' '.join(command)
+
+    phony1 = 'mape-report'
+
+    writer.add_rule(save_mape_report, depends=str_files, command=command)
+    writer.add_rule(phony1, depends=save_mape_report, phony=True)
+    writer.add_rule('all', depends=phony1, phony=True)
+
+
+def run_mape_report_by_folder(details, writer):
+    file_pairs = dict()
+
+    for detail in details:
+        if detail.setting_folder not in file_pairs:
+            file_pairs[detail.setting_folder] = list()
+
+        pair = (detail.predict, detail.test_target)
+        file_pairs[detail.setting_folder].append(pair)
+
+    for folder, pairs in file_pairs.items():
+        save_mape_report = f'output/mape_report-{folder}.csv'
+
+        command = list()
+        command.append(f'./run_mape_report.py --save {save_mape_report}')
+
+        for predict_file, target_file in pairs:
+            command.append(f'--predict {predict_file} --target {target_file}')
+
+        command = ' '.join(command)
+        str_depends = ' '.join([
+            file
+            for pair in pairs
+            for file in pair
+        ])
+
+        phony1 = f'mape-report-{folder}'
+
+        writer.add_rule(save_mape_report, depends=str_depends, command=command)
+        writer.add_rule(phony1, depends=save_mape_report, phony=True)
+
+
 def generate_all():
     folders = [
         'netload', 'potential', 'potential_only', 'netload_only', 'combined'
@@ -226,6 +282,9 @@ def generate_all():
 
         run_time_report(details, writer)
         run_time_report_by_folder(details, writer)
+
+        run_mape_report(details, writer)
+        run_mape_report_by_folder(details, writer)
 
         for detail in details:
             run_model(detail, writer=writer)
