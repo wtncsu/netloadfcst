@@ -21,35 +21,35 @@ class Makefile:
     def print(self, *args):
         print(*args, file=self._file)
 
-    def set_default_goals(self, goals):
+    def one_shell(self):
+        self.print('.ONESHELL:')
+
+    def set_default_goal(self, goals):
         goals = _as_list(goals)
         str_goals = ' '.join(goals)
         self.print(f'.DEFAULT_GOAL:={str_goals}')
-        self.print()
 
     def add_default_goals(self, goals):
-        goals = _as_list(goals)
-        str_goals = ' '.join(goals)
+        goals = ' '.join(_as_list(goals))
         self.print(f'.DEFAULT_GOAL+={goals}')
 
-    def add_rule(self, targets, depends=None, command=None, phony=False):
-        targets = _as_list(targets)
-        is_multiple_targets = len(targets) > 1
+    def add_rule(self, target, depends=None, command=None, phony=False,
+                 grouped=False):
 
-        targets = ' '.join(targets)
+        target = ' '.join(_as_list(target))
         depends = '' if depends is None else ' '.join(_as_list(depends))
+        command = None if command is None else (
+            ' \n\t'.join(_as_list(command))
+        )
+
+        colon = ':' if not grouped else '&:'
 
         if phony:
-            self.print(f'.PHONY: {targets}')
+            self.print(f'.PHONY: {target}')
 
-        if not is_multiple_targets:
-            self.print(f'{targets} : {depends}')
+        self.print(f'{target} {colon} {depends}')
 
-            if command is not None:
-                self.print(f'\t{command}')
-
-        else:
-            self.print(f'{targets} &: {depends}')
+        if command is not None:
             self.print(f'\t{command}')
 
         self.print()
@@ -278,7 +278,8 @@ def generate_all():
 
     with open('Makefile', 'w') as file:
         writer = Makefile(file)
-        writer.set_default_goals('all')
+        writer.one_shell()
+        writer.set_default_goal('all')
 
         run_time_report(details, writer)
         run_time_report_by_folder(details, writer)
