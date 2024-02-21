@@ -16,14 +16,12 @@ if len(args.predict) != len(args.target):
 
 
 def calculate_mape(predict, target):
-    predict = predict.ravel()
-    target = target.ravel()
-    full_scale = abs(target).max()
+    full_scale = abs(target).max(axis=0)
 
     error = target - predict
     error_percent = error / full_scale * 100
 
-    return abs(error_percent).mean()
+    return abs(error_percent).mean(axis=0)
 
 
 def read_csv(filename):
@@ -35,17 +33,15 @@ all_mape = list()
 for predict_filename, target_filename in zip(args.predict, args.target):
     print(predict_filename, target_filename)
 
-    predict = read_csv(predict_filename).to_numpy()
-    target = read_csv(target_filename).to_numpy()
+    predict = read_csv(predict_filename)
+    target = read_csv(target_filename)
 
-    mape = calculate_mape(predict=predict, target=target)
+    mape = calculate_mape(predict=predict, target=target).to_frame()
     all_mape.append(mape)
 
-report = pd.DataFrame({
-    'target':  [str(filename) for filename in args.target],
-    'predict': [str(filename) for filename in args.predict],
-    'mape':    all_mape
-})
+report = pd.concat(all_mape, axis=1).T
+report.insert(0, 'target', [str(filename) for filename in args.target])
+report.insert(0, 'predict', [str(filename) for filename in args.predict])
 
 report.set_index('predict', inplace=True)
 report.sort_index(inplace=True)
