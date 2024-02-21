@@ -14,10 +14,10 @@ args = parser.parse_args()
 
 
 def parse_datasets():
-    predict = read_csv(args.predict, index_col=0, parse_dates=[0])
+    predict = read_csv(args.predict, index_col='date', parse_dates=['date'])
     target = None
     if args.target is not None:
-        target = read_csv(args.target, index_col=0, parse_dates=[0])
+        target = read_csv(args.target, index_col='date', parse_dates=['date'])
 
     return predict, target
 
