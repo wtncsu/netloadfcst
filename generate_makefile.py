@@ -101,7 +101,7 @@ def run_model(detail, writer):
         f'--train-target={detail.train_target} '
         f'--test-feature={detail.test_feature} '
         f'--predict={detail.predict} '
-        f'--visualize-tree={detail.plot_tree} '
+        f'--plot-tree={detail.plot_tree} '
         f'--train-time={detail.train_time} '
         f'--test-time={detail.test_time} '
     )
