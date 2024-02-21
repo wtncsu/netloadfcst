@@ -1,0 +1,50 @@
+From bee20abc795423f8edec0b618bed2037b10cf010 Mon Sep 17 00:00:00 2001
+From: John Yu <byu@ncsu.edu>
+Date: Wed, 21 Feb 2024 14:38:55 -0500
+Subject: [PATCH] use configparser when no tomllib
+
+---
+ run_model.py | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/run_model.py b/run_model.py
+index ae837b9..9813c63 100755
+--- a/run_model.py
++++ b/run_model.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-import tomllib
++from configparser import ConfigParser
+ from argparse import ArgumentParser
+ from pathlib import Path
+ from time import time
+@@ -24,14 +24,23 @@ parser.add_argument('--test-time', type=Path)
+ args = parser.parse_args()
+ args.predict.parent.mkdir(parents=True, exist_ok=True)
+ 
+-with open(args.config, 'rb') as config_file:
+-    config = tomllib.load(config_file)
++config_parser = ConfigParser()
++with open(args.config, 'r') as config_file:
++    config_parser.read_file(config_file)
++
++config = {
++    'max_n_splits': int(config_parser['model']['max_n_splits']),
++    'min_partition_size': int(config_parser['model']['min_partition_size']),
++    'min_impurity_drop': float(config_parser['model']['min_impurity_drop']),
++    'batch_size': int(config_parser['model']['batch_size']),
++    'n_epochs': int(config_parser['model']['n_epochs']),
++}
+ 
+ train_feature = pd.read_csv(args.train_feature, index_col=['date'])
+ train_target = pd.read_csv(args.train_target, index_col=['date'])
+ test_feature = pd.read_csv(args.test_feature, index_col=['date'])
+ 
+-model = ProbabilisticFuzzyTree(**config['model'],
++model = ProbabilisticFuzzyTree(**config,
+                                distribution=DegenerateDist())
+ 
+ train_start = time()
+-- 
+2.34.1
+
