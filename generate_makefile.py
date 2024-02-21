@@ -4,147 +4,177 @@ from pathlib import Path
 from types import SimpleNamespace
 
 
-class Makefile:
-    def __init__(self, filename='Makefile', default='all'):
-        self._file = open(filename, 'w')
-        self.print(f'.DEFAULT_GOAL:={default}')
-        self.new_rule(default, depends=[])
+def _as_list(item_or_items):
+    if isinstance(item_or_items, str):
+        items = [item_or_items]
 
-    def close(self):
-        self._file.close()
+    else:
+        items = list(item_or_items)
+
+    return items
+
+
+class Makefile:
+    def __init__(self, file):
+        self._file = file
 
     def print(self, *args):
         print(*args, file=self._file)
 
-    def phony(self, target):
-        self.print(f'.PHONY: {target}')
+    def set_default_goals(self, goals):
+        goals = _as_list(goals)
+        str_goals = ' '.join(goals)
+        self.print(f'.DEFAULT_GOAL:={str_goals}')
+        self.print()
 
-    def new_rule(self, target_or_targets, depends, command=None):
-        depends = ' '.join(depends)
+    def add_default_goals(self, goals):
+        goals = _as_list(goals)
+        str_goals = ' '.join(goals)
+        self.print(f'.DEFAULT_GOAL+={goals}')
 
-        if isinstance(target_or_targets, list):
-            target_or_targets = ' '.join(target_or_targets)
-            self.print(f'{target_or_targets} &: {depends}')
+    def add_rule(self, targets, depends=None, command=None, phony=False):
+        targets = _as_list(targets)
+        is_multiple_targets = len(targets) > 1
+
+        targets = ' '.join(targets)
+        depends = '' if depends is None else ' '.join(_as_list(depends))
+
+        if phony:
+            self.print(f'.PHONY: {targets}')
+
+        if not is_multiple_targets:
+            self.print(f'{targets} : {depends}')
+
+            if command is not None:
+                self.print(f'\t{command}')
 
         else:
-            self.print(f'{target_or_targets} : {depends}')
-
-        if command is not None:
+            self.print(f'{targets} &: {depends}')
             self.print(f'\t{command}')
 
         self.print()
 
 
-def create_details(category, setting_file):
-    details = SimpleNamespace()
-
+def create_detail(setting_file):
+    setting_folder = setting_file.parent.name
     dataset = setting_file.stem
 
-    details.setting = f'{setting_file}'
-    details.train_feature = f'{category}_train/feature-{dataset}.csv'
-    details.train_target = f'{category}_train/target-{dataset}.csv'
-    details.test_feature = f'{category}_test/feature-{dataset}.csv'
-    details.test_target = f'{category}_test/target-{dataset}.csv'
-
-    details.predict_mean = f'output/{category}/mean-{dataset}.csv'
-    details.predict_std = f'output/{category}/std-{dataset}.csv'
-    details.train_time = f'output/{category}/train-time-{dataset}'
-    details.test_time = f'output/{category}/test-time-{dataset}'
-
-    details.visualize_tree = f'output/{category}/tree-{dataset}.svg'
-    details.plot = f'output/{category}/{dataset}.png'
+    details = SimpleNamespace()
 
     details.dataset = dataset
-    details.category = category
+    details.setting_folder = setting_folder
+
+    details.setting_file = f'{setting_file}'
+    details.train_feature = f'{setting_folder}_train/feature-{dataset}.csv'
+    details.train_target = f'{setting_folder}_train/target-{dataset}.csv'
+    details.test_feature = f'{setting_folder}_test/feature-{dataset}.csv'
+    details.test_target = f'{setting_folder}_test/target-{dataset}.csv'
+
+    details.predict = f'output/{setting_folder}/predict-{dataset}.csv'
+    details.train_time = f'output/{setting_folder}/train-time-{dataset}'
+    details.test_time = f'output/{setting_folder}/test-time-{dataset}'
+    details.plot_predict = f'output/{setting_folder}/{dataset}.png'
+    details.plot_tree = f'output/{setting_folder}/{dataset}.svg'
+
     return details
 
 
-def run_model(details):
-    run_target = f'run-{details.category}-{details.dataset}'
-
+def run_model(detail, writer):
     targets = [
-        f'{details.predict_mean}', f'{details.predict_std}',
-        f'{details.train_time}', f'{details.test_time}',
-        f'{details.visualize_tree}'
+        f'{detail.predict}',
+        f'{detail.train_time}',
+        f'{detail.test_time}',
+        f'{detail.plot_tree}'
     ]
 
     depends = [
-        f'{details.setting}', f'{details.train_feature}',
-        f'{details.train_target}', f'{details.test_feature}'
+        f'{detail.setting_file}',
+        f'{detail.train_feature}',
+        f'{detail.train_target}',
+        f'{detail.test_feature}'
     ]
 
     command = (
         './run_model.py '
-        f'--config={details.setting} '
-        f'--train-feature={details.train_feature} '
-        f'--train-target={details.train_target} '
-        f'--test-feature={details.test_feature} '
-        f'--predict-mean={details.predict_mean} '
-        f'--predict-std={details.predict_std} '
-        f'--visualize-tree={details.visualize_tree} '
-        f'--train-time={details.train_time} '
-        f'--test-time={details.test_time} '
+        f'--config={detail.setting_file} '
+        f'--train-feature={detail.train_feature} '
+        f'--train-target={detail.train_target} '
+        f'--test-feature={detail.test_feature} '
+        f'--predict={detail.predict} '
+        f'--visualize-tree={detail.plot_tree} '
+        f'--train-time={detail.train_time} '
+        f'--test-time={detail.test_time} '
     )
 
-    makefile.phony(run_target)
-    makefile.new_rule(run_target, depends=targets)
-    makefile.new_rule('all', depends=targets)
-    makefile.new_rule(targets, depends=depends, command=command)
+    writer.add_rule(targets, depends=depends, command=command)
+
+    writer.add_rule(f'run-{detail.setting_folder}-{detail.dataset}', phony=True,
+                    depends=targets)
+
+    writer.add_rule(f'run-{detail.setting_folder}', phony=True, depends=targets)
+    writer.add_rule('all', phony=True, depends=targets)
 
 
-def plot_prediction(details):
+def plot_prediction(detail, writer):
     depends = [
-        f'{details.predict_mean}', f'{details.predict_std}',
-        f'{details.test_target}'
+        f'{detail.predict}',
+        f'{detail.test_target}'
     ]
 
-    makefile.new_rule(
-        details.plot, depends=depends, command=(
-            './plot_prediction.py '
-            f'--mean={details.predict_mean} '
-            f'--std={details.predict_std} '
-            f'--target={details.test_target} '
-            f'--save={details.plot} '
-        )
+    command = (
+        './plot_prediction.py '
+        f'--predict={detail.predict} '
+        f'--target={detail.test_target} '
+        f'--save={detail.plot_predict} '
     )
 
-    makefile.new_rule('all', depends=[details.plot])
+    target = detail.plot_predict
+    phony_target1 = f'plot-{detail.setting_folder}-{detail.dataset}'
+    phony_target2 = f'plot-{detail.setting_folder}'
+
+    writer.add_rule(target, depends=depends, command=command)
+    writer.add_rule(phony_target1, phony=True, depends=target)
+    writer.add_rule(phony_target2, phony=True, depends=phony_target1)
+    writer.add_rule('all', phony=True, depends=phony_target2)
 
 
-def show_prediction(details):
-    show_target = f'show-{details.category}-{details.dataset}'
-
+def show_prediction(detail, writer):
     depends = [
-        f'{details.predict_mean}', f'{details.predict_std}',
-        f'{details.test_target}'
+        f'{detail.predict}',
+        f'{detail.test_target}'
     ]
 
-    makefile.phony(show_target)
-    makefile.new_rule(
-        show_target, depends=depends, command=(
-            './plot_prediction.py '
-            f'--mean={details.predict_mean} '
-            f'--std={details.predict_std} '
-            f'--target={details.test_target} '
-        )
+    command = (
+        './plot_prediction.py '
+        f'--predict={detail.predict} '
+        f'--target={detail.test_target} '
+        f'--save={detail.plot_predict} '
     )
 
+    phony1 = f'show-{detail.setting_folder}-{detail.dataset}'
+    phony2 = f'show-{detail.setting_folder}'
 
-makefile = Makefile()
+    writer.add_rule(phony1, phony=True, depends=depends, command=command)
+    writer.add_rule(phony2, phony=True, depends=phony1)
+    writer.add_rule('all', phony=True, depends=phony2)
 
-categories = [
+
+folders = [
     'netload', 'potential', 'potential_only', 'netload_only', 'combined'
 ]
 
-for category in categories:
-    setting_files = [
-        Path(file) for file in glob(f'settings/{category}/*.toml')
-    ]
+with open('Makefile', 'w') as file:
+    writer = Makefile(file)
+    writer.set_default_goals('all')
 
-    for setting_file in setting_files:
-        details = create_details(category, setting_file)
-        run_model(details)
-        plot_prediction(details)
-        show_prediction(details)
+    for folder in folders:
+        setting_files = [
+            Path(file) for file in glob(f'settings/{folder}/*.toml')
+        ]
 
-makefile.close()
+        for setting_file in setting_files:
+            detail = create_detail(setting_file)
+
+            run_model(detail, writer=writer)
+            plot_prediction(detail, writer=writer)
+            show_prediction(detail, writer=writer)
