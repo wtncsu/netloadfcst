@@ -134,8 +134,8 @@ def plot_prediction(detail, writer):
 
     writer.add_rule(target, depends=depends, command=command)
     writer.add_rule(phony_target1, phony=True, depends=target)
-    writer.add_rule(phony_target2, phony=True, depends=phony_target1)
-    writer.add_rule('all', phony=True, depends=phony_target2)
+    writer.add_rule(phony_target2, phony=True, depends=target)
+    writer.add_rule('all', phony=True, depends=target)
 
 
 def show_prediction(detail, writer):
@@ -148,7 +148,6 @@ def show_prediction(detail, writer):
         './plot_prediction.py '
         f'--predict={detail.predict} '
         f'--target={detail.test_target} '
-        f'--save={detail.plot_predict} '
     )
 
     phony1 = f'show-{detail.setting_folder}-{detail.dataset}'
@@ -156,7 +155,6 @@ def show_prediction(detail, writer):
 
     writer.add_rule(phony1, phony=True, depends=depends, command=command)
     writer.add_rule(phony2, phony=True, depends=phony1)
-    writer.add_rule('all', phony=True, depends=phony2)
 
 
 def run_time_report(details, writer):
