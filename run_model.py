@@ -17,7 +17,7 @@ parser.add_argument('--train-feature', required=True, type=Path)
 parser.add_argument('--train-target', required=True, type=Path)
 parser.add_argument('--test-feature', required=True, type=Path)
 parser.add_argument('--predict', required=True, type=Path)
-parser.add_argument('--visualize-tree', type=Path)
+parser.add_argument('--plot-tree', type=Path)
 parser.add_argument('--train-time', type=Path)
 parser.add_argument('--test-time', type=Path)
 
