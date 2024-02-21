@@ -159,22 +159,78 @@ def show_prediction(detail, writer):
     writer.add_rule('all', phony=True, depends=phony2)
 
 
-folders = [
-    'netload', 'potential', 'potential_only', 'netload_only', 'combined'
-]
+def run_time_report(details, writer):
+    save_time_report = 'output/time_report.csv'
 
-with open('Makefile', 'w') as file:
-    writer = Makefile(file)
-    writer.set_default_goals('all')
+    train_time_files = [detail.train_time for detail in details]
+    test_time_files = [detail.test_time for detail in details]
 
-    for folder in folders:
-        setting_files = [
-            Path(file) for file in glob(f'settings/{folder}/*.toml')
-        ]
+    time_files = train_time_files + test_time_files
+    str_time_files = ' '.join(time_files)
 
-        for setting_file in setting_files:
-            detail = create_detail(setting_file)
+    command = f'./run_time_report.py --save {save_time_report} {str_time_files}'
 
+    phony1 = 'time-report'
+
+    writer.add_rule(save_time_report, depends=time_files, command=command)
+    writer.add_rule(phony1, depends=save_time_report, phony=True)
+    writer.add_rule('all', depends=phony1, phony=True)
+
+
+def run_time_report_by_folder(details, writer):
+    reports = dict()
+
+    for detail in details:
+        if detail.setting_folder not in reports:
+            reports[detail.setting_folder] = list()
+
+        reports[detail.setting_folder].append(detail.train_time)
+        reports[detail.setting_folder].append(detail.test_time)
+
+    for folder, time_files in reports.items():
+        save_time_report = f'output/time_report-{folder}.csv'
+        str_time_files = ' '.join(time_files)
+
+        command = (
+            './run_time_report.py '
+            f'--save {save_time_report} '
+            f'{str_time_files}'
+        )
+
+        phony1 = f'time-report-{folder}'
+
+        writer.add_rule(save_time_report, depends=time_files, command=command)
+        writer.add_rule(phony1, depends=save_time_report, phony=True)
+
+
+def generate_all():
+    folders = [
+        'netload', 'potential', 'potential_only', 'netload_only', 'combined'
+    ]
+
+    setting_files = [
+        Path(file)
+
+        for folder in folders
+        for file in glob(f'settings/{folder}/*.toml')
+    ]
+
+    details = [
+        create_detail(setting_file)
+        for setting_file in setting_files
+    ]
+
+    with open('Makefile', 'w') as file:
+        writer = Makefile(file)
+        writer.set_default_goals('all')
+
+        run_time_report(details, writer)
+        run_time_report_by_folder(details, writer)
+
+        for detail in details:
             run_model(detail, writer=writer)
             plot_prediction(detail, writer=writer)
             show_prediction(detail, writer=writer)
+
+
+generate_all()
