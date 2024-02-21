@@ -1,0 +1,24 @@
+From 332157f503bf2bcdbe4318d9e0b022ec4fb5a6ce Mon Sep 17 00:00:00 2001
+From: John Yu <byu@ncsu.edu>
+Date: Wed, 21 Feb 2024 17:51:31 -0500
+Subject: [PATCH] remove plot tree from makefile
+
+---
+ generate_makefile.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/generate_makefile.py b/generate_makefile.py
+index 05a6057..b175d14 100755
+--- a/generate_makefile.py
++++ b/generate_makefile.py
+@@ -84,7 +84,6 @@ def run_model(detail, writer):
+         f'{detail.predict}',
+         f'{detail.train_time}',
+         f'{detail.test_time}',
+-        f'{detail.plot_tree}'
+     ]
+ 
+     depends = [
+-- 
+2.34.1
+
