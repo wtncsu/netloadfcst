@@ -48,10 +48,10 @@ predict = pd.DataFrame(predict,
 
 predict.to_csv(args.predict)
 
-if args.visualize_tree is not None:
-    args.visualize_tree.parent.mkdir(parents=True, exist_ok=True)
+if args.plot_tree is not None:
+    args.plot_tree.parent.mkdir(parents=True, exist_ok=True)
     tree_plot = model.visualize(column_names=train_feature.columns)
-    tree_plot.draw(args.visualize_tree)
+    tree_plot.draw(args.plot_tree)
 
 train_time = train_end - train_start
 test_time = test_end - test_start
