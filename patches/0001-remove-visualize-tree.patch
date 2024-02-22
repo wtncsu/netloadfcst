@@ -1,6 +1,6 @@
-From e42930ca96beaaa2930ecdef6120b19d27d56259 Mon Sep 17 00:00:00 2001
-From: John Yu <byu@ncsu.edu>
-Date: Wed, 21 Feb 2024 14:21:47 -0500
+From 1f0f1805e7fc9f66e5162c438c7738fb833c5b01 Mon Sep 17 00:00:00 2001
+From: John Yu <byu9@ncsu.edu>
+Date: Wed, 21 Feb 2024 20:02:02 -0500
 Subject: [PATCH] remove visualize tree
 
 ---
@@ -8,21 +8,21 @@ Subject: [PATCH] remove visualize tree
  1 file changed, 5 deletions(-)
 
 diff --git a/run_model.py b/run_model.py
-index 29926b8..ae837b9 100755
+index 6778b89..1976688 100755
 --- a/run_model.py
 +++ b/run_model.py
 @@ -48,11 +48,6 @@ predict = pd.DataFrame(predict,
  
  predict.to_csv(args.predict)
  
--if args.visualize_tree is not None:
--    args.visualize_tree.parent.mkdir(parents=True, exist_ok=True)
+-if args.plot_tree is not None:
+-    args.plot_tree.parent.mkdir(parents=True, exist_ok=True)
 -    tree_plot = model.visualize(column_names=train_feature.columns)
--    tree_plot.draw(args.visualize_tree)
+-    tree_plot.draw(args.plot_tree)
 -
  train_time = train_end - train_start
  test_time = test_end - test_start
  
 -- 
-2.34.1
+2.43.0
 
