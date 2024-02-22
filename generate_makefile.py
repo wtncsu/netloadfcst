@@ -73,7 +73,7 @@ def create_detail(setting_file):
     details.predict = f'output/{setting_folder}/predict-{dataset}.csv'
     details.train_time = f'output/{setting_folder}/train-time-{dataset}'
     details.test_time = f'output/{setting_folder}/test-time-{dataset}'
-    details.plot_predict = f'output/{setting_folder}/{dataset}.png'
+    details.plot_predict = f'output/{setting_folder}/{dataset}'
     details.plot_tree = f'output/{setting_folder}/{dataset}.svg'
 
     return details
