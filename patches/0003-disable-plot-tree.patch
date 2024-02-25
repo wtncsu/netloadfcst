@@ -1,17 +1,17 @@
-From 1f0f1805e7fc9f66e5162c438c7738fb833c5b01 Mon Sep 17 00:00:00 2001
-From: John Yu <byu9@ncsu.edu>
-Date: Wed, 21 Feb 2024 20:02:02 -0500
-Subject: [PATCH] remove visualize tree
+From e149157c3fe73606267a0faa41bd4f89d29f52db Mon Sep 17 00:00:00 2001
+From: John Yu <byu@ncsu.edu>
+Date: Sun, 25 Feb 2024 18:29:20 -0500
+Subject: [PATCH 3/3] disable plot tree
 
 ---
  run_model.py | 5 -----
  1 file changed, 5 deletions(-)
 
 diff --git a/run_model.py b/run_model.py
-index 6778b89..1976688 100755
+index becc119..b9fd001 100755
 --- a/run_model.py
 +++ b/run_model.py
-@@ -48,11 +48,6 @@ predict = pd.DataFrame(predict,
+@@ -57,11 +57,6 @@ predict = pd.DataFrame(predict,
  
  predict.to_csv(args.predict)
  
@@ -24,5 +24,5 @@ index 6778b89..1976688 100755
  test_time = test_end - test_start
  
 -- 
-2.43.0
+2.34.1
 

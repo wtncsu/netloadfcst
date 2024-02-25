@@ -1,17 +1,17 @@
-From da7e4874e55ba8d127b0d739f604ad83bcce98a1 Mon Sep 17 00:00:00 2001
+From 81ce32b3efe0f55080d319fb9f1397362b93e6d9 Mon Sep 17 00:00:00 2001
 From: John Yu <byu@ncsu.edu>
-Date: Wed, 21 Feb 2024 20:11:44 -0500
-Subject: [PATCH] make run_model silent
+Date: Sun, 25 Feb 2024 18:28:59 -0500
+Subject: [PATCH 2/3] make run_model.py quiet
 
 ---
  run_model.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/run_model.py b/run_model.py
-index 6778b89..9b268d6 100755
+index b04d4da..becc119 100755
 --- a/run_model.py
 +++ b/run_model.py
-@@ -31,7 +31,7 @@ train_feature = pd.read_csv(args.train_feature, index_col=['date'])
+@@ -40,7 +40,7 @@ train_feature = pd.read_csv(args.train_feature, index_col=['date'])
  train_target = pd.read_csv(args.train_target, index_col=['date'])
  test_feature = pd.read_csv(args.test_feature, index_col=['date'])
  
