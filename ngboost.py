@@ -1,38 +1,78 @@
 from types import SimpleNamespace
 
-import numpy
-from tqdm.auto import trange, tqdm
+import numpy as np
+from scipy.stats import norm
+from tqdm.auto import trange
 
-from .distributions import NormalParameters
-from .scoring_rules import CRPS
+from paper_project.probabilistic_fuzzy_tree import (
+    ProbabilisticFuzzyTree,
+)
+from paper_project.probabilistic_fuzzy_tree.output_functions import (
+    EstimateMean,
+)
+
+_SQRT_PI = np.sqrt(np.pi)
 
 
-class MultiOutputModel:
+def _clipped_log(val):
+    val = np.clip(val, a_min=1e-9, a_max=None)
+    return np.log(val)
+
+
+def _clipped_exp(val):
+    val = np.clip(val, a_min=-500, a_max=500)
+    return np.exp(val)
+
+
+def _crps_primitive(mu, sigma, sample):
     """
-    For fitting parametric distributions with more than one parameters as if
-    fitting a single-output model.
+    Computes the Continuous Ranked Probability Score of a Gaussian
+    distribution against an observed outcome. The inputs must have the same
+    shape.
     """
+    assert mu.shape == sample.shape
+    assert sigma.shape == sample.shape
 
-    def __init__(self, base_learner, num_outputs):
-        self._base_learners = [base_learner.clone() for _ in range(num_outputs)]
+    z = (sample - mu) / sigma
 
-    def fit(self, features, targets):
-        progress = tqdm(list(zip(self._base_learners, targets)),
-                        desc='Parameters', leave=False)
+    crps = sigma * (
+        z * (2 * norm.cdf(z) - 1)
+        + 2 * norm.pdf(z)
+        - 1 / _SQRT_PI
+    )
 
-        for model, target in progress:
-            model.fit(features, target)
+    mean_crps = crps.mean(axis=-1)
+    all_targets_total = mean_crps.sum()
+    return all_targets_total
 
-    def predict(self, features):
-        targets = [model.predict(features) for model in self._base_learners]
-        return targets
+
+def _crps_derivative(mu, sigma, sample):
+    """
+    Computes the natural gradients of the CRPS of a Gaussian distribution
+    with respect to mean and log standard derivation against an observed
+    outcome. The inputs must have the same shape.
+    """
+    assert mu.shape == sample.shape
+    assert sigma.shape == sample.shape
+
+    z = (sample - mu) / sigma
+
+    ord_mean = 1 - 2 * norm.cdf(z)
+    ord_logstd = sigma * (
+        2 * norm.pdf(z) - 1 / _SQRT_PI
+    )
+
+    nat_mean = ord_mean * sigma * _SQRT_PI
+    nat_logstd = ord_logstd * _SQRT_PI * 2 / sigma
+
+    return nat_mean, nat_logstd
 
 
 def _find_optimal_scaling(Scoring_Rule, Dist_Params, theta_m_prev, f_m_pred,
                           target):
-    rho_search_space = numpy.logspace(-10, 2, 100, base=2.0)
+    rho_search_space = np.logspace(-10, 2, 100, base=2.0)
 
-    losses = numpy.fromiter(
+    losses = np.fromiter(
         (Scoring_Rule.primitive(
             Dist_Params.from_array(theta_m_prev - rho * f_m_pred),
             target).sum()
@@ -48,44 +88,65 @@ def _find_optimal_scaling(Scoring_Rule, Dist_Params, theta_m_prev, f_m_pred,
 
 
 class NGBoost:
-    def __init__(self, base_learner,
-                 Dist_Params=NormalParameters,
-                 Scoring_Rule=CRPS,
-                 n_stages=2000,
-                 learn_rate=0.1):
-        self._Dist_Params = Dist_Params
-        self._Scoring_Rule = Scoring_Rule
+    __slots__ = (
+        '_mu_ensemble',
+        '_log_sigma_ensemble',
+        '_n_stages',
+        '_learn_rate',
+        '_scalings',
+        '_marginal_mu',
+        '_marginal_log_sigma',
+    )
+
+    def __init__(self, n_stages, learn_rate, base_params):
         self._n_stages = n_stages
         self._learn_rate = learn_rate
 
-        self._ensemble = [
-            MultiOutputModel(base_learner, Dist_Params.num_parameters)
-            for _ in range(n_stages)]
+        self._mu_ensemble = [
+            ProbabilisticFuzzyTree(output_func=EstimateMean(),
+                                   **base_params)
+            for _ in range(n_stages)
+        ]
 
-        self._scalings = numpy.empty(shape=n_stages)
+        self._log_sigma_ensemble = [
+            ProbabilisticFuzzyTree(output_func=EstimateMean(),
+                                   **base_params)
+            for _ in range(n_stages)
+        ]
 
-    def fit(self, features, target):
-        n_samples = len(numpy.asarray(features))
-        self._theta0 = self._Dist_Params.from_marginal(target).to_array()
+        self._scalings = np.empty(n_stages)
+        self._marginal_mu = None
+        self._marginal_log_sigma = None
 
-        # The initial prediction _theta0 for all target samples is the same and
-        # has only one sample, but we need to repeat it by the number of samples
-        # so that the base learner does not complain about feature-target length
-        # mismatch.
-        theta0 = numpy.broadcast_to(
-            self._theta0, shape=(n_samples, self._Dist_Params.num_parameters))
+    def fit(self, feature, target):
+        feature = np.asarray(feature)
+        target = np.asarray(target)
 
-        theta_m_prev = theta0.copy()
+        mu0 = feature.mean(axis=0, keepdims=True)
+        log_sigma0 = _clipped_log(feature.std(axis=0, keepdims=True))
+
+        self._marginal_mu = mu0
+        self._marginal_log_sigma = log_sigma0
+
+        prev_mu = mu0
+        prev_log_sigma = log_sigma0
 
         progress = trange(self._n_stages, leave=False, desc='Boost stage')
-
         for boost_stage in progress:
-            dist = self._Dist_Params.from_array(theta_m_prev)
-            g_m = self._Scoring_Rule.natural_grad(dist, target)
+            prev_sigma = _clipped_exp(prev_log_sigma)
 
-            f_m = self._ensemble[boost_stage]
-            f_m.fit(features, targets=self._Dist_Params.unpack(g_m))
-            f_m_pred = self._Dist_Params.pack(*f_m.predict(features))
+            gradient = _crps_derivative(prev_mu, prev_sigma, target)
+
+            mu_model = self._mu_ensemble[boost_stage]
+            log_sigma_model = self._log_sigma_ensemble[boost_stage]
+
+            mu_model.fit(feature=feature, target=prev_mu)
+            log_sigma_model.fit(feature=feature, target=prev_log_sigma)
+
+            pred_mu = mu_model.predict(feature=feature)
+            pred_log_sigma = log_sigma_model.predict(feature=feature)
+
+
 
             optimal = _find_optimal_scaling(
                 self._Scoring_Rule, self._Dist_Params, theta_m_prev,
@@ -96,7 +157,9 @@ class NGBoost:
 
             progress.set_postfix(loss=optimal.loss)
 
-    def predict(self, features):
+    def predict(self, feature):
+        feature = np.asarray(feature)
+
         n_samples = len(numpy.asarray(features))
 
         # The initial prediction _theta0 for all target samples is the same and
