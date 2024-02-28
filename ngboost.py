@@ -1,11 +1,12 @@
-from types import SimpleNamespace
-
 import numpy as np
 from scipy.stats import norm
 from tqdm.auto import trange
 
 from paper_project.probabilistic_fuzzy_tree import (
     ProbabilisticFuzzyTree,
+)
+from paper_project.probabilistic_fuzzy_tree.membership_functions import (
+    SigmoidMF,
 )
 from paper_project.probabilistic_fuzzy_tree.output_functions import (
     EstimateMean,
@@ -24,15 +25,13 @@ def _clipped_exp(val):
     return np.exp(val)
 
 
-def _crps_primitive(mu, sigma, sample):
+def _crps_primitive(mu, log_sigma, sample):
     """
     Computes the Continuous Ranked Probability Score of a Gaussian
     distribution against an observed outcome. The inputs must have the same
     shape.
     """
-    assert mu.shape == sample.shape
-    assert sigma.shape == sample.shape
-
+    sigma = _clipped_exp(log_sigma)
     z = (sample - mu) / sigma
 
     crps = sigma * (
@@ -41,20 +40,16 @@ def _crps_primitive(mu, sigma, sample):
         - 1 / _SQRT_PI
     )
 
-    mean_crps = crps.mean(axis=-1)
-    all_targets_total = mean_crps.sum()
-    return all_targets_total
+    return crps
 
 
-def _crps_derivative(mu, sigma, sample):
+def _crps_derivative(mu, log_sigma, sample):
     """
     Computes the natural gradients of the CRPS of a Gaussian distribution
     with respect to mean and log standard derivation against an observed
     outcome. The inputs must have the same shape.
     """
-    assert mu.shape == sample.shape
-    assert sigma.shape == sample.shape
-
+    sigma = _clipped_exp(log_sigma)
     z = (sample - mu) / sigma
 
     ord_mean = 1 - 2 * norm.cdf(z)
@@ -68,55 +63,29 @@ def _crps_derivative(mu, sigma, sample):
     return nat_mean, nat_logstd
 
 
-def _find_optimal_scaling(Scoring_Rule, Dist_Params, theta_m_prev, f_m_pred,
-                          target):
-    rho_search_space = np.logspace(-10, 2, 100, base=2.0)
-
-    losses = np.fromiter(
-        (Scoring_Rule.primitive(
-            Dist_Params.from_array(theta_m_prev - rho * f_m_pred),
-            target).sum()
-         for rho in rho_search_space), dtype=float)
-
-    best = losses.argmin()
-
-    optimal = SimpleNamespace()
-    optimal.rho_m = rho_search_space[best]
-    optimal.loss = losses[best]
-
-    return optimal
-
-
 class NGBoost:
-    __slots__ = (
-        '_mu_ensemble',
-        '_log_sigma_ensemble',
-        '_n_stages',
-        '_learn_rate',
-        '_scalings',
-        '_marginal_mu',
-        '_marginal_log_sigma',
-    )
-
     def __init__(self, n_stages, learn_rate, base_params):
+        self._mu0 = None
+        self._log_sigma0 = None
+
         self._n_stages = n_stages
         self._learn_rate = learn_rate
 
         self._mu_ensemble = [
             ProbabilisticFuzzyTree(output_func=EstimateMean(),
+                                   membership_func=SigmoidMF(),
                                    **base_params)
             for _ in range(n_stages)
         ]
 
         self._log_sigma_ensemble = [
             ProbabilisticFuzzyTree(output_func=EstimateMean(),
+                                   membership_func=SigmoidMF(),
                                    **base_params)
             for _ in range(n_stages)
         ]
 
         self._scalings = np.empty(n_stages)
-        self._marginal_mu = None
-        self._marginal_log_sigma = None
 
     def fit(self, feature, target):
         feature = np.asarray(feature)
@@ -125,54 +94,59 @@ class NGBoost:
         mu0 = feature.mean(axis=0, keepdims=True)
         log_sigma0 = _clipped_log(feature.std(axis=0, keepdims=True))
 
-        self._marginal_mu = mu0
-        self._marginal_log_sigma = log_sigma0
+        self._mu0 = mu0
+        self._log_sigma0 = log_sigma0
 
-        prev_mu = mu0
-        prev_log_sigma = log_sigma0
+        mu = mu0
+        log_sigma = log_sigma0
 
         progress = trange(self._n_stages, leave=False, desc='Boost stage')
         for boost_stage in progress:
-            prev_sigma = _clipped_exp(prev_log_sigma)
-
-            gradient = _crps_derivative(prev_mu, prev_sigma, target)
-
             mu_model = self._mu_ensemble[boost_stage]
             log_sigma_model = self._log_sigma_ensemble[boost_stage]
 
-            mu_model.fit(feature=feature, target=prev_mu)
-            log_sigma_model.fit(feature=feature, target=prev_log_sigma)
+            dmu, dlog_sigma = _crps_derivative(mu, log_sigma, target)
+            mu_model.fit(feature=feature, target=dmu)
+            log_sigma_model.fit(feature=feature, target=dlog_sigma)
 
             pred_mu = mu_model.predict(feature=feature)
             pred_log_sigma = log_sigma_model.predict(feature=feature)
 
+            scalings = np.logspace(-10, 5, 200, base=2.0)
+            scalings = np.expand_dims(scalings, (-1, -2))
 
+            losses = _crps_primitive(
+                mu=mu - scalings * pred_mu,
+                log_sigma=log_sigma - scalings * pred_log_sigma,
+                sample=target
+            )
+            losses = losses.sum(axis=-1).mean(axis=-1)
 
-            optimal = _find_optimal_scaling(
-                self._Scoring_Rule, self._Dist_Params, theta_m_prev,
-                f_m_pred, target)
+            optimal_scaling_index = losses.argmin()
+            optimal_scaling = scalings[optimal_scaling_index]
 
-            self._scalings[boost_stage] = optimal.rho_m
-            theta_m_prev -= self._learn_rate * (optimal.rho_m * f_m_pred)
+            self._scalings[boost_stage] = optimal_scaling
 
-            progress.set_postfix(loss=optimal.loss)
+            mu = mu - self._learn_rate * optimal_scaling * pred_mu
+            log_sigma = (
+                log_sigma - self._learn_rate * optimal_scaling * pred_log_sigma
+            )
 
     def predict(self, feature):
-        feature = np.asarray(feature)
+        mu = self._mu0
+        log_sigma = self._log_sigma0
 
-        n_samples = len(numpy.asarray(features))
+        for boost_stage in range(self._n_stages):
+            scaling = self._scalings[boost_stage]
 
-        # The initial prediction _theta0 for all target samples is the same and
-        # has only one sample, but we need to repeat it by the number of samples
-        # so that the base learner does not complain about feature-target length
-        # mismatch.
-        theta0 = numpy.broadcast_to(
-            self._theta0, shape=(n_samples, self._Dist_Params.num_parameters))
+            mu_model = self._mu_ensemble[boost_stage]
+            log_sigma_model = self._log_sigma_ensemble[boost_stage]
 
-        sum_f_m_preds = sum(
-            rho_m * self._Dist_Params.pack(*f_m.predict(features))
-            for f_m, rho_m in zip(self._ensemble, self._scalings)
-        )
+            mu_pred = mu_model.predict(feature)
+            log_sigma_pred = log_sigma_model.predict(feature)
 
-        theta = theta0 - self._learn_rate * sum_f_m_preds
-        return self._Dist_Params.from_array(theta).to_distribution()
+            mu = mu - self._learn_rate * scaling * mu_pred
+            log_sigma = log_sigma - self._learn_rate * scaling * log_sigma_pred
+
+        sigma = _clipped_exp(log_sigma)
+        return mu, sigma
