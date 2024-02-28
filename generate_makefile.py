@@ -135,7 +135,6 @@ def plot_prediction(detail, writer):
     writer.add_rule(target, depends=depends, command=command)
     writer.add_rule(phony_target1, phony=True, depends=target)
     writer.add_rule(phony_target2, phony=True, depends=target)
-    writer.add_rule('all', phony=True, depends=target)
 
 
 def show_prediction(detail, writer):
