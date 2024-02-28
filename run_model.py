@@ -7,8 +7,8 @@ from time import time
 import pandas as pd
 
 from paper_project.probabilistic_fuzzy_tree import ProbabilisticFuzzyTree
-from paper_project.probabilistic_fuzzy_tree.distributions import (
-    DegenerateDist,
+from paper_project.probabilistic_fuzzy_tree.output_functions import (
+    EstimateMean,
 )
 
 parser = ArgumentParser()
@@ -32,10 +32,10 @@ train_target = pd.read_csv(args.train_target, index_col=['date'])
 test_feature = pd.read_csv(args.test_feature, index_col=['date'])
 
 model = ProbabilisticFuzzyTree(**config['model'],
-                               distribution=DegenerateDist())
+                               output_func=EstimateMean())
 
 train_start = time()
-model.fit(train_feature, train_target)
+model.fit(train_feature, train_target, feature_names=train_feature.columns)
 train_end = time()
 
 test_start = time()
@@ -50,8 +50,7 @@ predict.to_csv(args.predict)
 
 if args.plot_tree is not None:
     args.plot_tree.parent.mkdir(parents=True, exist_ok=True)
-    tree_plot = model.visualize(column_names=train_feature.columns)
-    tree_plot.draw(args.plot_tree)
+    model.plot_tree(args.plot_tree)
 
 train_time = train_end - train_start
 test_time = test_end - test_start
