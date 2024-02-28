@@ -4,3 +4,7 @@ min_partition_size=1
 min_impurity_drop=0.0
 batch_size=32
 n_epochs=20
+
+[ensemble]
+n_stages=30
+learn_rate=0.5
