@@ -259,7 +259,7 @@ def run_mape_report_by_folder(details, writer):
 
 def generate_all():
     folders = [
-        'netload', 'potential', 'potential_only', 'netload_only', 'combined'
+        'case1', 'case2', 'case3', 'case4',
     ]
 
     setting_files = [
