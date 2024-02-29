@@ -70,7 +70,8 @@ def create_detail(setting_file):
     details.test_feature = f'{setting_folder}_test/feature-{dataset}.csv'
     details.test_target = f'{setting_folder}_test/target-{dataset}.csv'
 
-    details.predict = f'output/{setting_folder}/predict-{dataset}.csv'
+    details.predict_mean = f'output/{setting_folder}/mean-{dataset}.csv'
+    details.predict_std = f'output/{setting_folder}/std-{dataset}.csv'
     details.train_time = f'output/{setting_folder}/train-time-{dataset}'
     details.test_time = f'output/{setting_folder}/test-time-{dataset}'
     details.plot_predict = f'output/{setting_folder}/{dataset}'
@@ -81,10 +82,10 @@ def create_detail(setting_file):
 
 def run_model(detail, writer):
     targets = [
-        f'{detail.predict}',
+        f'{detail.predict_mean}',
+        f'{detail.predict_std}',
         f'{detail.train_time}',
-        f'{detail.test_time}',
-        f'{detail.plot_tree}'
+        f'{detail.test_time}'
     ]
 
     depends = [
@@ -95,13 +96,13 @@ def run_model(detail, writer):
     ]
 
     command = (
-        './run_model.py '
+        './run_ngboost.py '
         f'--config={detail.setting_file} '
         f'--train-feature={detail.train_feature} '
         f'--train-target={detail.train_target} '
         f'--test-feature={detail.test_feature} '
-        f'--predict={detail.predict} '
-        f'--plot-tree={detail.plot_tree} '
+        f'--predict-mean={detail.predict_mean} '
+        f'--predict-std={detail.predict_std} '
         f'--train-time={detail.train_time} '
         f'--test-time={detail.test_time} '
     )
@@ -117,13 +118,13 @@ def run_model(detail, writer):
 
 def plot_prediction(detail, writer):
     depends = [
-        f'{detail.predict}',
+        f'{detail.predict_mean}',
         f'{detail.test_target}'
     ]
 
     command = (
         './plot_prediction.py '
-        f'--predict={detail.predict} '
+        f'--predict={detail.predict_mean} '
         f'--target={detail.test_target} '
         f'--save={detail.plot_predict} '
     )
@@ -139,13 +140,13 @@ def plot_prediction(detail, writer):
 
 def show_prediction(detail, writer):
     depends = [
-        f'{detail.predict}',
+        f'{detail.predict_mean}',
         f'{detail.test_target}'
     ]
 
     command = (
         './plot_prediction.py '
-        f'--predict={detail.predict} '
+        f'--predict={detail.predict_mean} '
         f'--target={detail.test_target} '
     )
 
@@ -203,7 +204,7 @@ def run_time_report_by_folder(details, writer):
 def run_mape_report(details, writer):
     save_mape_report = 'output/mape_report.csv'
 
-    predict_files = [detail.predict for detail in details]
+    predict_files = [detail.predict_mean for detail in details]
     target_files = [detail.test_target for detail in details]
 
     files = predict_files + target_files
@@ -231,7 +232,7 @@ def run_mape_report_by_folder(details, writer):
         if detail.setting_folder not in file_pairs:
             file_pairs[detail.setting_folder] = list()
 
-        pair = (detail.predict, detail.test_target)
+        pair = (detail.predict_mean, detail.test_target)
         file_pairs[detail.setting_folder].append(pair)
 
     for folder, pairs in file_pairs.items():
