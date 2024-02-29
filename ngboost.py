@@ -91,8 +91,8 @@ class NGBoost:
         feature = np.asarray(feature)
         target = np.asarray(target)
 
-        mu0 = feature.mean(axis=0, keepdims=True)
-        log_sigma0 = _clipped_log(feature.std(axis=0, keepdims=True))
+        mu0 = target.mean(axis=0, keepdims=True)
+        log_sigma0 = _clipped_log(target.std(axis=0, keepdims=True))
 
         self._mu0 = mu0
         self._log_sigma0 = log_sigma0
