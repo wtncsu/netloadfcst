@@ -1,0 +1,25 @@
+From aff61135b4b35325f659640c34f10343df185376 Mon Sep 17 00:00:00 2001
+From: John Yu <byu@ncsu.edu>
+Date: Thu, 29 Feb 2024 12:41:06 -0500
+Subject: [PATCH] make script quiet
+
+---
+ ngboost.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ngboost.py b/ngboost.py
+index 82d8a16..7d438b3 100644
+--- a/ngboost.py
++++ b/ngboost.py
+@@ -100,7 +100,7 @@ class NGBoost:
+         mu = mu0
+         log_sigma = log_sigma0
+ 
+-        progress = trange(self._n_stages, leave=False, desc='Boost stage')
++        progress = trange(self._n_stages, disable=True, leave=False, desc='Boost stage')
+         for boost_stage in progress:
+             mu_model = self._mu_ensemble[boost_stage]
+             log_sigma_model = self._log_sigma_ensemble[boost_stage]
+-- 
+2.34.1
+
