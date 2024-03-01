@@ -107,7 +107,7 @@ def run_model(detail, writer):
         f'--test-time={detail.test_time} '
     )
 
-    writer.add_rule(targets, depends=depends, command=command)
+    writer.add_rule(targets, depends=depends, command=command, grouped=True)
 
     writer.add_rule(f'run-{detail.setting_folder}-{detail.dataset}', phony=True,
                     depends=targets)
