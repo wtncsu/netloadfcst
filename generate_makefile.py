@@ -259,7 +259,7 @@ def run_mape_report_by_folder(details, writer):
 
 def generate_all():
     folders = [
-        'case1', 'case2', 'case3', 'case4',
+        'case1', 'case2', 'case3', 'case4', 'case5',
     ]
 
     setting_files = [

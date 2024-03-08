@@ -111,8 +111,15 @@ def case4(train_or_test):
     return feature, target
 
 
+def case5(train_or_test):
+    # mw_2,mw_7,poten_2,poten_7
+    feature = train_or_test.drop(columns=['netload', 'potential'])
+    target = train_or_test[['netload']]
+    return feature, target
+
+
 cases = [
-    case1, case2, case3, case4
+    case1, case2, case3, case4, case5
 ]
 
 for df, dataset in zip(df_combined, datasets):
