@@ -6,5 +6,5 @@ batch_size=32
 n_epochs=20
 
 [ensemble]
-n_stages=10
+n_stages=15
 learn_rate=0.5
