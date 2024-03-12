@@ -1,0 +1,14 @@
+diff --git a/ngboost.py b/ngboost.py
+index 82d8a16..ad845ab 100644
+--- a/ngboost.py
++++ b/ngboost.py
+@@ -120,7 +120,8 @@ class NGBoost:
+                 log_sigma=log_sigma - scalings * pred_log_sigma,
+                 sample=target
+             )
+-            losses = losses.sum(axis=-1).mean(axis=-1)
++            loss_weights = [1, 2]
++            losses = (loss_weights * losses).sum(axis=-1).mean(axis=-1)
+ 
+             optimal_scaling_index = losses.argmin()
+             optimal_scaling = scalings[optimal_scaling_index]
