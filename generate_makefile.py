@@ -77,7 +77,26 @@ def create_detail(setting_file):
     details.plot_predict = f'output/{setting_folder}/{dataset}'
     details.plot_tree = f'output/{setting_folder}/{dataset}.svg'
 
+    details.predict_mean_clipped = (
+        f'output/{setting_folder}/clipped_mean-{dataset}.csv'
+    )
+
     return details
+
+
+def clip_dataset(detail, writer):
+    depends = [
+        f'{detail.predict_mean}',
+    ]
+
+    command = (
+        './clip_dataset.py '
+        f'--dataset={detail.predict_mean} '
+        f'--save={detail.predict_mean_clipped} '
+    )
+
+    target = detail.predict_mean_clipped
+    writer.add_rule(target, depends=depends, command=command)
 
 
 def run_model(detail, writer):
@@ -204,7 +223,7 @@ def run_time_report_by_folder(details, writer):
 def run_mape_report(details, writer):
     save_mape_report = 'output/mape_report.csv'
 
-    predict_files = [detail.predict_mean for detail in details]
+    predict_files = [detail.predict_mean_clipped for detail in details]
     target_files = [detail.test_target for detail in details]
 
     files = predict_files + target_files
@@ -232,7 +251,7 @@ def run_mape_report_by_folder(details, writer):
         if detail.setting_folder not in file_pairs:
             file_pairs[detail.setting_folder] = list()
 
-        pair = (detail.predict_mean, detail.test_target)
+        pair = (detail.predict_mean_clipped, detail.test_target)
         file_pairs[detail.setting_folder].append(pair)
 
     for folder, pairs in file_pairs.items():
@@ -289,6 +308,7 @@ def generate_all():
             run_model(detail, writer=writer)
             plot_prediction(detail, writer=writer)
             show_prediction(detail, writer=writer)
+            clip_dataset(detail, writer=writer)
 
 
 generate_all()
