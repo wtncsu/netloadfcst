@@ -39,7 +39,7 @@ parser.add_argument('--freq', type=str, default='h',
 
 # Dataset specific args settings
 parser.add_argument('--num_feats', type=int, default=3, help='number of features as input')
-parser.add_argument('--data_col_len', type=int, default=24, help='number of observations in a period (24 hrs/day')
+parser.add_argument('--data_col_len', type=int, default=24, help='total number of data columns')
 
 # Specifying forecasting task input and output lengths
 parser.add_argument('--seq_len', type=int, default=24 * 14, help='input sequence length')
